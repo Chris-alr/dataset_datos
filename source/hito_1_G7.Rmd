@@ -1,0 +1,143 @@
+---
+title: "Analisis de Datos en Dataset AnimeList"
+output: html_document
+date: '2022-09-12'
+---
+
+# Diccionario 
+
+**anime_id (ID del anime), title (título), title_english (título en inglés), title_japanese (titulo en japones), title_synonyms (sinónimos del título), image_url (URL de la imagen), type (tipo), source (fuente), episodes (episodios), status (estado), airing (transmitiendo), aired_string (transmitido el), aired (transmitido), duration (duración), rating (clasificación), score (puntaje), scored_by (puntaje por), rank (rango), popularity (popularidad), members (miembros), favorites (favoritos), background (antecedentes), premiered (estrenado), broadcast (emision), related (animes relacionados), producer (productora), licensor (licenciador), studio (estudio), genre (genero), opening_theme (tema de inicio), ending_theme (tema de cierre).**
+
+# Introduccion y Contexto 
+
+**En los últimos años, el anime ha ido creciendo exponencialmente y ha ido llegando a un público cada vez más grande “Puede que el anime esté atravesando una de sus mejores épocas de la historia. El género tiene audiencias en casi cualquier parte del mundo.” ( Nolan Rada Galindo 9 de junio de 2021 ) , de esto se han dado cuenta muchos servicios de streaming y estudios de televisión, por lo cual, varios quieren aprovechar esta oportunidad para poder atraer a más gente a sintonizar sus servicios y beneficiarse monetariamente “En las últimas décadas hemos vivido un auténtico renacimiento en el mundo del anime con la animación japonesa volviéndose un hobby mucho más normalizado y "mainstream" … Las películas de anime recaudan millones y millones” ( MARILÓ DELGADO 21 Mayo 2022).** 
+
+**Un nuevo estudio de televisión dedicado específicamente a la transmisión de anime, tiene problemas para decidir acerca de qué shows añadir a su transmisión habitual, tienen como objetivo poder captar más público e ir creciendo como estudio alcanzando más rating, fuimos contratados para poder ayudarlos a alcanzar dicho objetivo. Para esto, realizaremos un análisis exploratorio de datos de un dataset histórico que obtuvimos de diversos animes que se han ido estrenando a lo largo de los años, con la finalidad de analizar las variables que nos sirvan y eliminar las que no, ordenar los datos con los que contamos y realizar boxplots y otros tipos de gráficos para examinar y obtener toda la información que podamos del dataset.** 
+
+**Lo que nos motivó a trabajar en conjunto en este estudio fue el querer ayudar a seguir expandiendo la cultura del anime, asistiendo a este estudio de televisión, se logrará que llegue a más televidentes mostrandoles animaciones de calidad, para que se interesen en ellas y sigan de manera autónoma buscando más animes.**
+
+# Analisis Exploratorio de Datos
+
+## Cargamos dataset desde el repositorio en cuestion
+```{r}
+ruta_csv <- "C://Users/Andy/Desktop/ufro/2022/2do semestre/Ing Datos/Proyecto/Hito 1/AnimeList.csv/AnimeList.csv"
+```
+
+## Importamos los datos del csv.
+```{r}
+AnimeList <- read.csv(ruta_csv)
+```
+
+## cargamos las librerias a ultilizar
+```{r}
+library(dplyr)
+library(zoo)
+library(xts)
+library(psych)
+library(MASS)
+library(EnvStats)
+library(fitdistrplus)
+library(tidyverse)
+library(ggplot2)
+library(corrgram)
+library(corrplot)
+```
+
+**Eliminando columnas irrelevantes.**
+```{r}
+AnimeList[ , c('opening_theme', 'ending_theme',  'licensor', 'image_url', 'background' , 'title_english' , 'title_japanese' , 'title_synonyms')] <- list(NULL)
+```
+
+**Luego, es necesario analizar la robustez de los datos mediante un boxplot y un histograma. En este caso queremos analizar el comportamiento del score de cada anime.**
+
+```{r}
+hist(AnimeList$score)
+```
+
+**El Histograma nos entrega visualmente un analisis descriptivo de la forma que tiene la distribucion de Animes en cuanto a su score, podemos ver un gran numero de animes con una valoracion entre 6 y 8. **
+
+```{r}
+boxplot(AnimeList$score)
+```
+**El boxplot podremos ver las medidas de posicion relativa mediante cuartiles que dividen a la muestra en grupos y ademas tenemos la presencia de valores atipicos, podemos ver que le media también está entre 6 y 8 de score**
+
+```{r}
+ggplot(AnimeList, aes(x = type , y= score, fill= type)) + geom_boxplot()
+```
+**El bloxplot nos muestra el orden por el tipo de anime y la valoracion media que tiene cada una, siendo la Movie la que tiene más valoraciones y también TV**
+
+```{r}
+ggplot(AnimeList, aes(x = type , y= members , fill= type)) + geom_boxplot()
+```
+**Este grafico nos muestra la diferencia de audiencia para cada tipo de anime, pudiendo así verificar que para un productor si quiere elegir un tipo de anime el más seguro es el de TV**
+
+
+```{r}
+ggplot(AnimeList, aes(x = rating , y= members , fill= rating)) + geom_boxplot()
+```
+**La razón principal sería que algunos animes con clasificación R, Death Note, Attack on Titans, por ejemplo, disfrutan de una popularidad sorprendentemente alta en todo el mundo. Sin embargo, en realidad, los animes PG-13 siguen siendo la corriente principal (cuentan con casi la mitad de todos los animes). Un consejo para los productores de anime sería que es seguro hacer un anime PG-13 ya que la cantidad de audiencia y las puntuaciones de esta calificación están por encima del promedio**
+
+```{r}
+plot(density(AnimeList$score), main= "Densidad de Score")
+```
+
+
+
+**El siguiente comando nos muestra los valores NA.**
+```{r}
+sapply(AnimeList, function(x) sum(is.na(x) | x== ''))
+```
+
+**Luego, es necesario reemplazar los espacios vacios por NA**
+```{r}
+apply <- apply(is.na(AnimeList),2,sum)
+apply
+```
+
+**Luego, es necesario reemplazar los espacios vacios por NA**
+
+```{r}
+AnimeList_NA <- AnimeList %>% mutate_all(na_if,"")
+head(AnimeList_NA)
+```
+
+**Finalmente se proceden a eliminar todos los datos de las filas y columnas que contengan Valores NA**
+
+```{r}
+AnimeList_clean<- AnimeList_NA%>% drop_na()
+head(AnimeList_clean)
+```
+
+**Procederemos a mostrar el dataset con las filas y columnas que contenian NA eliminados**
+```{r}
+head(AnimeList_clean)
+```
+
+**con los datos limpios se procede a mostrar el dataset**
+```{r}
+summary(AnimeList_clean)
+```
+
+# PREGUNTAS Y PROBLEMAS 
+
+### 1)	¿Se podrá comprobar que tan verídica es la relación entre la popularidad de los animes con la evaluación que reciben?.
+
+### Analizaremos las estadísticas de los animes, considerando las siguientes variables:
+
+#### 1)	Popularidad
+#### 2)	Evaluacion
+
+### Para así poder comprobar que tan verídica es la relación entre la popularidad de los animes con su respectiva evaluación.
+
+### 2)	¿Se podrá predecir una búsqueda de animes relacionados?.
+
+### 3)	¿Es posible conocer el ranking de un nuevo anime según productora, estudio y género?.
+
+# Aportes y contribuciones al Analisis
+### Jorge Delgado: Analisis exploratorio de datos.
+### Christopher Alarcon: Introducción, contexto y motivación.
+### Andy Sandoval: Diccionario, preguntas y problemas con aportes en la eliminacion de columnas irrelevantes.
+
+# Enlace de youtube
+
+### https://www.youtube.com/watch?v=k1E3x78ItLE
